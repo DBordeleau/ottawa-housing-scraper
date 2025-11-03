@@ -1,3 +1,8 @@
 /scraper/__pycache__/
 /scraper/.env
 /scraper/test_proxies.py
+
+/ottawa-housing-dashboard/node_modules/
+/ottawa-housing-dashboard/.next
+/ottawa-housing-dashboard/.env.local
+/ottawa-housing-dashboard/next-env.d.ts
