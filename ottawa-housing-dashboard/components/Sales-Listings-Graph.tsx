@@ -7,17 +7,21 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 interface FreeholdSale {
     date: string
     active_listings: number
+    median_dom: number
 }
 
 interface CondoSale {
     date: string
     active_listings: number
+    median_dom: number
 }
 
 interface ChartDataPoint {
     date: string
     freehold: number | null
     condo: number | null
+    freeholdDOM: number | null
+    condoDOM: number | null
     freeholdMoM?: number | null
     condoMoM?: number | null
 }
@@ -59,7 +63,7 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                 // Fetch freehold sales data
                 const { data: freeholdData, error: freeholdError } = await supabase
                     .from('freehold_sales')
-                    .select('date, active_listings')
+                    .select('date, active_listings, median_dom')
                     .order('date', { ascending: true })
 
                 if (freeholdError) throw freeholdError
@@ -67,7 +71,7 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                 // Fetch condo sales data
                 const { data: condoData, error: condoError } = await supabase
                     .from('condo_sales')
-                    .select('date, active_listings')
+                    .select('date, active_listings, median_dom')
                     .order('date', { ascending: true })
 
                 if (condoError) throw condoError
@@ -80,7 +84,9 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                     dateMap.set(item.date, {
                         date: item.date,
                         freehold: item.active_listings,
+                        freeholdDOM: item.median_dom,
                         condo: null,
+                        condoDOM: null,
                         freeholdMoM: null,
                         condoMoM: null
                     })
@@ -91,11 +97,14 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                     const existing = dateMap.get(item.date)
                     if (existing) {
                         existing.condo = item.active_listings
+                        existing.condoDOM = item.median_dom
                     } else {
                         dateMap.set(item.date, {
                             date: item.date,
                             freehold: null,
+                            freeholdDOM: null,
                             condo: item.active_listings,
+                            condoDOM: item.median_dom,
                             freeholdMoM: null,
                             condoMoM: null
                         })
@@ -181,7 +190,7 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                     }
                 }
 
-                // Send data to parent component
+                // Send data to parent component (so the page can have dynamic summary text)
                 if (onDataLoad && mergedData.length > 0) {
                     const latest = mergedData[mergedData.length - 1]
                     onDataLoad({
@@ -241,18 +250,32 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
 
                     {/* Freehold always comes first */}
                     {freeholdData && freeholdData.value && (
-                        <p className="text-blue-600 font-medium">
-                            Freehold: {freeholdData.value.toLocaleString()} listings
-                            {formatMoM(freeholdData.payload.freeholdMoM)}
-                        </p>
+                        <div className="mb-2">
+                            <p className="text-blue-600 font-medium">
+                                Freehold: {freeholdData.value.toLocaleString()} listings
+                                {formatMoM(freeholdData.payload.freeholdMoM)}
+                            </p>
+                            {freeholdData.payload.freeholdDOM !== null && (
+                                <p className="text-blue-500 text-sm ml-2">
+                                    Median DOM: {freeholdData.payload.freeholdDOM} days
+                                </p>
+                            )}
+                        </div>
                     )}
 
                     {/* Condo comes second */}
                     {condoData && condoData.value && (
-                        <p className="text-red-600 font-medium">
-                            Condo: {condoData.value.toLocaleString()} listings
-                            {formatMoM(condoData.payload.condoMoM)}
-                        </p>
+                        <div>
+                            <p className="text-red-600 font-medium">
+                                Condo: {condoData.value.toLocaleString()} listings
+                                {formatMoM(condoData.payload.condoMoM)}
+                            </p>
+                            {condoData.payload.condoDOM !== null && (
+                                <p className="text-red-500 text-sm ml-2">
+                                    Median DOM: {condoData.payload.condoDOM} days
+                                </p>
+                            )}
+                        </div>
                     )}
                 </div>
             )
