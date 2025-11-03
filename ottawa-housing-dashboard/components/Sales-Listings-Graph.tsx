@@ -330,6 +330,7 @@ export default function SalesListingsGraph({ onDataLoad }: SalesListingsGraphPro
                     <YAxis
                         stroke="#6b7280"
                         width={60}
+                        domain={['dataMin - 10', 'dataMax + 10']}  // Auto-adjust with 1 listing padding
                     />
                     <text
                         x={20}

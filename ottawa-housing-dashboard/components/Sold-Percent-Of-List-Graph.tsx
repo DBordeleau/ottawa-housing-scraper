@@ -7,11 +7,13 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 interface FreeholdSale {
     date: string
     median_sold_price: number
+    median_list_price: number
 }
 
 interface CondoSale {
     date: string
     median_sold_price: number
+    median_list_price: number
 }
 
 interface ChartDataPoint {
@@ -34,19 +36,19 @@ interface CustomTooltipProps {
     label?: string;
 }
 
-export interface SalesGraphData {
-    latestFreeholdPrice: number | null
-    latestCondoPrice: number | null
+export interface SoldPercentData {
+    latestFreeholdPercent: number | null
+    latestCondoPercent: number | null
     freeholdMoM: number | null
     condoMoM: number | null
     freeholdYoY: number | null
 }
 
-interface SalesGraphProps {
-    onDataLoad?: (data: SalesGraphData) => void
+interface SoldPercentGraphProps {
+    onDataLoad?: (data: SoldPercentData) => void
 }
 
-export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
+export default function SoldPercentOfListGraph({ onDataLoad }: SoldPercentGraphProps) {
     const [chartData, setChartData] = useState<ChartDataPoint[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                 // Fetch freehold sales data
                 const { data: freeholdData, error: freeholdError } = await supabase
                     .from('freehold_sales')
-                    .select('date, median_sold_price')
+                    .select('date, median_sold_price, median_list_price')
                     .order('date', { ascending: true })
 
                 if (freeholdError) throw freeholdError
@@ -67,7 +69,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                 // Fetch condo sales data
                 const { data: condoData, error: condoError } = await supabase
                     .from('condo_sales')
-                    .select('date, median_sold_price')
+                    .select('date, median_sold_price, median_list_price')
                     .order('date', { ascending: true })
 
                 if (condoError) throw condoError
@@ -75,27 +77,35 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                 // Merge the data by date
                 const dateMap = new Map<string, ChartDataPoint>()
 
-                // Add freehold data
+                // Add freehold data - calculate sold/list percentage
                 freeholdData?.forEach((item: FreeholdSale) => {
+                    const percent = item.median_list_price > 0
+                        ? (item.median_sold_price / item.median_list_price) * 100
+                        : null
+
                     dateMap.set(item.date, {
                         date: item.date,
-                        freehold: item.median_sold_price,
+                        freehold: percent,
                         condo: null,
                         freeholdMoM: null,
                         condoMoM: null
                     })
                 })
 
-                // Add condo data
+                // Add condo data - calculate sold/list percentage
                 condoData?.forEach((item: CondoSale) => {
+                    const percent = item.median_list_price > 0
+                        ? (item.median_sold_price / item.median_list_price) * 100
+                        : null
+
                     const existing = dateMap.get(item.date)
                     if (existing) {
-                        existing.condo = item.median_sold_price
+                        existing.condo = percent
                     } else {
                         dateMap.set(item.date, {
                             date: item.date,
                             freehold: null,
-                            condo: item.median_sold_price,
+                            condo: percent,
                             freeholdMoM: null,
                             condoMoM: null
                         })
@@ -135,14 +145,14 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                     if (closestPriorIndex >= 0) {
                         const previous = mergedData[closestPriorIndex]
 
-                        // Calculate freehold MoM
+                        // Calculate freehold MoM (percentage point change)
                         if (current.freehold && previous.freehold) {
-                            current.freeholdMoM = ((current.freehold - previous.freehold) / previous.freehold) * 100
+                            current.freeholdMoM = current.freehold - previous.freehold
                         }
 
-                        // Calculate condo MoM
+                        // Calculate condo MoM (percentage point change)
                         if (current.condo && previous.condo) {
-                            current.condoMoM = ((current.condo - previous.condo) / previous.condo) * 100
+                            current.condoMoM = current.condo - previous.condo
                         }
                     }
                 }
@@ -176,7 +186,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                     if (closestYearPriorIndex >= 0) {
                         const yearPrior = mergedData[closestYearPriorIndex]
                         if (latest.freehold && yearPrior.freehold) {
-                            freeholdYoY = ((latest.freehold - yearPrior.freehold) / yearPrior.freehold) * 100
+                            freeholdYoY = latest.freehold - yearPrior.freehold
                         }
                     }
                 }
@@ -185,8 +195,8 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                 if (onDataLoad && mergedData.length > 0) {
                     const latest = mergedData[mergedData.length - 1]
                     onDataLoad({
-                        latestFreeholdPrice: latest.freehold,
-                        latestCondoPrice: latest.condo,
+                        latestFreeholdPercent: latest.freehold,
+                        latestCondoPercent: latest.condo,
                         freeholdMoM: latest.freeholdMoM || null,
                         condoMoM: latest.condoMoM || null,
                         freeholdYoY: freeholdYoY
@@ -195,8 +205,8 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
 
                 setError(null)
             } catch (err) {
-                console.error('Error fetching sales data:', err)
-                setError('Failed to load sales data')
+                console.error('Error fetching sold percent data:', err)
+                setError('Failed to load sold percent data')
             } finally {
                 setLoading(false)
             }
@@ -204,16 +214,6 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
 
         fetchData()
     }, [onDataLoad])
-
-    // Format currency for tooltip
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-CA', {
-            style: 'currency',
-            currency: 'CAD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(value)
-    }
 
     // Format date for display
     const formatDate = (dateString: string) => {
@@ -224,7 +224,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
         })
     }
 
-    // Format MoM percentage with color coding
+    // Format MoM percentage point change with color coding
     const formatMoM = (value: number | null | undefined) => {
         if (value === null || value === undefined) return null
 
@@ -233,7 +233,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
 
         return (
             <span className={`text-sm font-semibold ${colorClass}`}>
-                {` (${sign}${value.toFixed(1)}% MoM)`}
+                {` (${sign}${value.toFixed(1)}pp MoM)`}
             </span>
         )
     }
@@ -252,7 +252,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                     {/* Freehold always comes first */}
                     {freeholdData && freeholdData.value && (
                         <p className="text-blue-600 font-medium">
-                            Freehold: {formatCurrency(freeholdData.value)}
+                            Freehold: {freeholdData.value.toFixed(1)}%
                             {formatMoM(freeholdData.payload.freeholdMoM)}
                         </p>
                     )}
@@ -260,7 +260,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                     {/* Condo comes second */}
                     {condoData && condoData.value && (
                         <p className="text-red-600 font-medium">
-                            Condo: {formatCurrency(condoData.value)}
+                            Condo: {condoData.value.toFixed(1)}%
                             {formatMoM(condoData.payload.condoMoM)}
                         </p>
                     )}
@@ -274,7 +274,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
     if (loading) {
         return (
             <div className="w-full h-96 flex items-center justify-center">
-                <div className="text-gray-500">Loading sales data...</div>
+                <div className="text-gray-500">Loading sold percent data...</div>
             </div>
         )
     }
@@ -290,7 +290,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
     if (chartData.length === 0) {
         return (
             <div className="w-full h-96 flex items-center justify-center">
-                <div className="text-gray-500">No sales data available</div>
+                <div className="text-gray-500">No sold percent data available</div>
             </div>
         )
     }
@@ -298,7 +298,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
     return (
         <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-6">
             <h2 className="text-2xl font-bold mb-6 text-gray-800">
-                Ottawa Housing Market - Median Sold Prices
+                Ottawa Housing Market - Sold as % of List Price
             </h2>
             <ResponsiveContainer width="100%" height={450}>
                 <LineChart
@@ -315,10 +315,10 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                         stroke="#6b7280"
                     />
                     <YAxis
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                        tickFormatter={(value) => `${value.toFixed(0)}%`}
                         stroke="#6b7280"
                         width={60}
-                        domain={['dataMin - 50000', 'dataMax + 50000']}
+                        domain={['dataMin - 1', 'dataMax + 1']}
                     />
                     <text
                         x={20}
@@ -329,7 +329,7 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                         transform="rotate(-90, 20, 200)"
                         textAnchor="middle"
                     >
-                        Median Sold Price
+                        Sold % of List
                     </text>
                     <Tooltip content={<CustomTooltip />} />
                     <Legend
