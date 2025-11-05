@@ -56,8 +56,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-white via-green-50 to-green-100">
-      <div className="container mx-auto p-8">
+    <main className="min-h-screen bg-linear-to-br from-white via-green-50 to-green-100 top-3rem">
+      <div className="container mx-auto p-8 pt-[5rem]">
         <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
           Ottawa Housing Market Dashboard
         </h1>

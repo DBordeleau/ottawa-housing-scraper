@@ -1,10 +1,69 @@
 'use client'
 
+import { useState } from 'react'
+import Header from '@/components/Header'
+import RentGraph, { RentGraphData } from '@/components/Rent-Graph'
+
 export default function RentalsPage() {
+    const [rentData, setRentData] = useState<RentGraphData | null>(null)
+
+    const formatCurrency = (value: number | null) => {
+        if (value === null) return 'N/A'
+        return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: 'CAD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(value)
+    }
+
+    const formatPercentage = (value: number | null) => {
+        if (value === null || value === undefined) return 'N/A'
+        const sign = value >= 0 ? '+' : ''
+        const colorClass = value >= 0 ? 'text-green-600' : 'text-red-600'
+
+        const displayValue = Math.abs(value) < 0.05 && value !== 0 ? 0.1 : Math.abs(value)
+        const displaySign = value >= 0 ? '+' : '-'
+
+        return (
+            <span className={`font-semibold ${colorClass}`}>
+                {displaySign}{displayValue.toFixed(1)}%
+            </span>
+        )
+    }
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-white via-green-50 to-green-100">
+        <main className="min-h-screen bg-linear-to-br from-white via-green-50 to-green-100">
+            <div className="container mx-auto p-8 pt-[5rem]">
+                <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+                    Ottawa Housing Market Dashboard - Rentals
+                </h1>
 
+                {rentData && (
+                    <div className="mb-4 space-y-4">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+                            <p className="text-lg text-center text-gray-700 leading-relaxed">
+                                The median rental price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
+                                <span className="font-bold text-gray-900">{formatCurrency(rentData.latestFreeholdPrice)}</span>,
+                                this represents a month over month change of {formatPercentage(rentData.freeholdMoM)}
+                                {rentData.freeholdYoY !== null && (
+                                    <>
+                                        , and a year over year change of {formatPercentage(rentData.freeholdYoY)}
+                                    </>
+                                )}.
+                            </p>
+
+                            <p className="text-lg text-center text-gray-700 leading-relaxed">
+                                The median rental price for <span className="font-semibold text-red-600">condos</span> in Ottawa last week was{' '}
+                                <span className="font-bold text-gray-900">{formatCurrency(rentData.latestCondoPrice)}</span>,
+                                this represents a month over month change of {formatPercentage(rentData.condoMoM)}.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <RentGraph onDataLoad={setRentData} />
+            </div>
         </main>
     )
 }
