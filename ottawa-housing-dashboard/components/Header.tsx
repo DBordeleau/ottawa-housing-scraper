@@ -48,6 +48,7 @@ export default function Header() {
                             )}
                         </Link>
                     </nav>
+                    Updated every Monday @ 6 PM ET
                 </div>
             </div>
         </header>

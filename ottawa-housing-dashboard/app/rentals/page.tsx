@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import RentGraph, { RentGraphData } from '@/components/Rent-Graph'
+import RentalListingsGraph, { RentalListingsData } from '@/components/Rental-Listings-Graph'
 
 export default function RentalsPage() {
     const [rentData, setRentData] = useState<RentGraphData | null>(null)
+    const [listingsData, setListingsData] = useState<RentalListingsData | null>(null)
 
     const formatCurrency = (value: number | null) => {
         if (value === null) return 'N/A'
@@ -14,6 +16,11 @@ export default function RentalsPage() {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(value)
+    }
+
+    const formatNumber = (value: number | null) => {
+        if (value === null) return 'N/A'
+        return value.toLocaleString()
     }
 
     const formatPercentage = (value: number | null) => {
@@ -60,7 +67,34 @@ export default function RentalsPage() {
                 </div>
             )}
 
-            <RentGraph onDataLoad={setRentData} />
+            <div className="mb-8">
+                <RentGraph onDataLoad={setRentData} />
+            </div>
+
+            {listingsData && (
+                <div className="mb-4">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
+                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                            There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
+                            <span className="font-semibold text-blue-600">freehold homes</span> available for rent in Ottawa last week,
+                            this represents a month over month change of {formatPercentage(listingsData.freeholdMoM)}
+                            {listingsData.freeholdYoY !== null && (
+                                <>
+                                    , and a year over year change of {formatPercentage(listingsData.freeholdYoY)}
+                                </>
+                            )}.
+                        </p>
+
+                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                            There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestCondoListings)}</span>{' '}
+                            <span className="font-semibold text-red-600">condos</span> available for rent in Ottawa last week,
+                            this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            <RentalListingsGraph onDataLoad={setListingsData} />
         </div>
     )
 }
