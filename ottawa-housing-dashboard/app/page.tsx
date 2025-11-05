@@ -44,7 +44,7 @@ export default function Home() {
     )
   }
 
-  // "N/A" if null
+  // "N/A" if null - Should only happen when a data point is missing
   const formatNumber = (value: number | null) => {
     if (value === null) return 'N/A'
     return value.toLocaleString()
@@ -56,15 +56,16 @@ export default function Home() {
   }
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+    <div className="container mx-auto p-4 sm:p-8">
+      <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-8 text-center">
         Ottawa Housing Market Dashboard - Sales
       </h1>
 
+      {/* Sales Summary */}
       {salesData && (
-        <div className="mb-4 space-y-4">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+        <div className="mb-4 space-y-2 sm:space-y-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-3 sm:p-4">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               The median sold price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
               <span className="font-bold text-gray-900">{formatCurrency(salesData.latestFreeholdPrice)}</span>,
               this represents a month over month change of {formatPercentage(salesData.freeholdMoM)}
@@ -75,7 +76,7 @@ export default function Home() {
               )}.
             </p>
 
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed mt-2">
               The median sold price for <span className="font-semibold text-red-600">condos</span> in Ottawa last week was{' '}
               <span className="font-bold text-gray-900">{formatCurrency(salesData.latestCondoPrice)}</span>,
               this represents a month over month change of {formatPercentage(salesData.condoMoM)}.
@@ -85,15 +86,15 @@ export default function Home() {
       )}
 
       {/* Sales Price Graph */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-8">
         <SalesGraph onDataLoad={setSalesData} />
       </div>
 
       {/* Active Listings Summary */}
       {listingsData && (
         <div className="mb-4">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
               <span className="font-semibold text-blue-600">freehold homes</span> listed for sale in Ottawa last week,
               this represents a month over month change of {formatPercentage(listingsData.freeholdMoM)}
@@ -104,7 +105,7 @@ export default function Home() {
               )}.
             </p>
 
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed mt-2">
               There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestCondoListings)}</span>{' '}
               <span className="font-semibold text-red-600">condos</span> listed for sale in Ottawa last week,
               this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
@@ -114,15 +115,15 @@ export default function Home() {
       )}
 
       {/* Active Listings Graph */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-8">
         <SalesListingsGraph onDataLoad={setListingsData} />
       </div>
 
       {/* Sold Percent of List Summary */}
       {soldPercentData && (
         <div className="mb-4">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               <span className="font-semibold text-blue-600">Freehold homes</span> in Ottawa last week sold at{' '}
               <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestFreeholdPercent)}</span> of their list price,
               this represents a month over month change of {formatPercentagePoints(soldPercentData.freeholdMoM)}
@@ -133,7 +134,7 @@ export default function Home() {
               )}.
             </p>
 
-            <p className="text-lg text-center text-gray-700 leading-relaxed">
+            <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed mt-2">
               <span className="font-semibold text-red-600">Condos</span> in Ottawa last week sold at{' '}
               <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestCondoPercent)}</span> of their list price,
               this represents a month over month change of {formatPercentagePoints(soldPercentData.condoMoM)}.

@@ -39,15 +39,16 @@ export default function RentalsPage() {
     }
 
     return (
-        <div className="container mx-auto p-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+        <div className="container mx-auto p-4 sm:p-8">
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-4 sm:mb-8 text-center">
                 Ottawa Housing Market Dashboard - Rentals
             </h1>
 
+            {/* Rental Summary */}
             {rentData && (
-                <div className="mb-4 space-y-4">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                <div className="mb-4 space-y-2 sm:space-y-4">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-3 sm:p-4">
+                        <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
                             The median rental price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
                             <span className="font-bold text-gray-900">{formatCurrency(rentData.latestFreeholdPrice)}</span>,
                             this represents a month over month change of {formatPercentage(rentData.freeholdMoM)}
@@ -58,7 +59,7 @@ export default function RentalsPage() {
                             )}.
                         </p>
 
-                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                        <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed mt-2">
                             The median rental price for <span className="font-semibold text-red-600">condos</span> in Ottawa last week was{' '}
                             <span className="font-bold text-gray-900">{formatCurrency(rentData.latestCondoPrice)}</span>,
                             this represents a month over month change of {formatPercentage(rentData.condoMoM)}.
@@ -67,14 +68,16 @@ export default function RentalsPage() {
                 </div>
             )}
 
-            <div className="mb-8">
+            {/* Rental Price Graph */}
+            <div className="mb-4 sm:mb-8">
                 <RentGraph onDataLoad={setRentData} />
             </div>
 
+            {/* Rental Listings Summary */}
             {listingsData && (
                 <div className="mb-4">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
-                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
+                        <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
                             There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
                             <span className="font-semibold text-blue-600">freehold homes</span> available for rent in Ottawa last week,
                             this represents a month over month change of {formatPercentage(listingsData.freeholdMoM)}
@@ -85,7 +88,7 @@ export default function RentalsPage() {
                             )}.
                         </p>
 
-                        <p className="text-lg text-center text-gray-700 leading-relaxed">
+                        <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed mt-2">
                             There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestCondoListings)}</span>{' '}
                             <span className="font-semibold text-red-600">condos</span> available for rent in Ottawa last week,
                             this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
@@ -94,6 +97,7 @@ export default function RentalsPage() {
                 </div>
             )}
 
+            {/* Rental Listings Graph */}
             <RentalListingsGraph onDataLoad={setListingsData} />
         </div>
     )
