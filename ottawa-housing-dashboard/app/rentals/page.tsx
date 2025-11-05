@@ -26,7 +26,6 @@ export default function RentalsPage() {
 
     const formatPercentage = (value: number | null) => {
         if (value === null || value === undefined) return 'N/A'
-        const sign = value >= 0 ? '+' : ''
         const colorClass = value >= 0 ? 'text-green-600' : 'text-red-600'
 
         const displayValue = Math.abs(value) < 0.05 && value !== 0 ? 0.1 : Math.abs(value)
