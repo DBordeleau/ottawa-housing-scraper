@@ -1,31 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 export function GraphSkeleton() {
-    const [line1Points, setLine1Points] = useState<number[]>(Array(20).fill(50))
-    const [line2Points, setLine2Points] = useState<number[]>(Array(20).fill(50))
-
-    // Generate random points only on client side after mount
-    useEffect(() => {
-        setLine1Points(Array.from({ length: 20 }, () => Math.random() * 40 + 30))
-        setLine2Points(Array.from({ length: 20 }, () => Math.random() * 40 + 30))
-    }, [])
-
-    // Create SVG path data for smooth lines
-    const createPath = (points: number[]) => {
-        const spacing = 100 / (points.length - 1)
-        let path = `M 0,${100 - points[0]}`
-
-        for (let i = 1; i < points.length; i++) {
-            const x = i * spacing
-            const y = 100 - points[i]
-            path += ` L ${x},${y}`
-        }
-
-        return path
-    }
-
     return (
         <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-3 sm:p-6">
             {/* Title skeleton */}
@@ -49,61 +24,6 @@ export function GraphSkeleton() {
                         <div key={i} className="h-px bg-gray-200 w-full"></div>
                     ))}
                 </div>
-
-                {/* Line chart simulation */}
-                <svg
-                    className="absolute left-16 sm:left-20 right-4 top-4 bottom-14"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                >
-                    {/* Gray line 1 */}
-                    <path
-                        d={createPath(line1Points)}
-                        fill="none"
-                        stroke="#d1d5db"
-                        strokeWidth="1.5"
-                        vectorEffect="non-scaling-stroke"
-                        className="animate-pulse"
-                        style={{ animationDuration: '2s' }}
-                    />
-
-                    {/* Gray line 2 */}
-                    <path
-                        d={createPath(line2Points)}
-                        fill="none"
-                        stroke="#d1d5db"
-                        strokeWidth="1.5"
-                        vectorEffect="non-scaling-stroke"
-                        className="animate-pulse"
-                        style={{ animationDuration: '2s', animationDelay: '0.3s' }}
-                    />
-
-                    {/* Dots on lines */}
-                    {line1Points.map((y, i) => (
-                        <circle
-                            key={`dot1-${i}`}
-                            cx={(i / (line1Points.length - 1)) * 100}
-                            cy={100 - y}
-                            r="0.8"
-                            fill="#d1d5db"
-                            className="animate-pulse"
-                            style={{ animationDelay: `${i * 0.05}s` }}
-                            vectorEffect="non-scaling-stroke"
-                        />
-                    ))}
-                    {line2Points.map((y, i) => (
-                        <circle
-                            key={`dot2-${i}`}
-                            cx={(i / (line2Points.length - 1)) * 100}
-                            cy={100 - y}
-                            r="0.8"
-                            fill="#d1d5db"
-                            className="animate-pulse"
-                            style={{ animationDelay: `${i * 0.05 + 0.3}s` }}
-                            vectorEffect="non-scaling-stroke"
-                        />
-                    ))}
-                </svg>
 
                 {/* X-axis labels */}
                 <div className="absolute bottom-4 left-16 sm:left-20 right-4 flex justify-between items-end">
