@@ -187,8 +187,8 @@ export default function SalesGraph({ onDataLoad }: SalesGraphProps) {
                     onDataLoad({
                         latestFreeholdPrice: latest.freehold,
                         latestCondoPrice: latest.condo,
-                        freeholdMoM: latest.freeholdMoM || null,
-                        condoMoM: latest.condoMoM || null,
+                        freeholdMoM: latest.freeholdMoM !== undefined ? latest.freeholdMoM : null,
+                        condoMoM: latest.condoMoM !== undefined ? latest.condoMoM : null,
                         freeholdYoY: freeholdYoY
                     })
                 }

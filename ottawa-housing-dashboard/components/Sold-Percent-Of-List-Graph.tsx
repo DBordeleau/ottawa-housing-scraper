@@ -197,8 +197,8 @@ export default function SoldPercentOfListGraph({ onDataLoad }: SoldPercentGraphP
                     onDataLoad({
                         latestFreeholdPercent: latest.freehold,
                         latestCondoPercent: latest.condo,
-                        freeholdMoM: latest.freeholdMoM || null,
-                        condoMoM: latest.condoMoM || null,
+                        freeholdMoM: latest.freeholdMoM !== undefined ? latest.freeholdMoM : null,
+                        condoMoM: latest.condoMoM !== undefined ? latest.condoMoM : null,
                         freeholdYoY: freeholdYoY
                     })
                 }
