@@ -1,4 +1,4 @@
-# Ottawa Housing Market Analytics Platform
+# Ottawa Housing Market Analytics Dashboard
 
 A full-stack web application that automatically scrapes Ottawa housing market data from a weekly summary post in the /r/ottawa subreddit and visualizes trends through an interactive Next.js dashboard.
 
