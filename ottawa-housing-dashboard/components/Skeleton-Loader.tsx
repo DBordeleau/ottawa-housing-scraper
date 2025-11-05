@@ -3,16 +3,14 @@
 import { useEffect, useState } from 'react'
 
 export function GraphSkeleton() {
-    const [mounted, setMounted] = useState(false)
+    const [line1Points, setLine1Points] = useState<number[]>(Array(20).fill(50))
+    const [line2Points, setLine2Points] = useState<number[]>(Array(20).fill(50))
 
-    // Only generate random points on client side after mount
+    // Generate random points only on client side after mount
     useEffect(() => {
-        setMounted(true)
+        setLine1Points(Array.from({ length: 20 }, () => Math.random() * 40 + 30))
+        setLine2Points(Array.from({ length: 20 }, () => Math.random() * 40 + 30))
     }, [])
-
-    // Generate stable points
-    const line1Points = mounted ? Array.from({ length: 20 }, () => Math.random() * 40 + 30) : Array(20).fill(50)
-    const line2Points = mounted ? Array.from({ length: 20 }, () => Math.random() * 40 + 30) : Array(20).fill(50)
 
     // Create SVG path data for smooth lines
     const createPath = (points: number[]) => {
