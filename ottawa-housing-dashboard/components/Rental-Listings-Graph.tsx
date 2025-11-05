@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { GraphSkeleton } from "./Skeleton-Loader";
 
 interface FreeholdRental {
     date: string
@@ -329,11 +330,7 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
     }
 
     if (loading) {
-        return (
-            <div className="w-full h-96 flex items-center justify-center">
-                <div className="text-gray-500">Loading rental listings data...</div>
-            </div>
-        )
+        return <GraphSkeleton />
     }
 
     if (error) {

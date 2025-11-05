@@ -4,6 +4,7 @@ import { useState } from 'react'
 import SalesGraph, { SalesGraphData } from '@/components/Sales-Graph'
 import SalesListingsGraph, { SalesListingsData } from '@/components/Sales-Listings-Graph'
 import SoldPercentOfListGraph, { SoldPercentData } from '@/components/Sold-Percent-Of-List-Graph'
+import { SummarySkeleton } from '@/components/Skeleton-Loader'
 
 export default function Home() {
   const [salesData, setSalesData] = useState<SalesGraphData | null>(null)
@@ -20,7 +21,6 @@ export default function Home() {
     }).format(value)
   }
 
-  // Red when negative, green when positive
   const formatPercentage = (value: number | null) => {
     if (value === null || value === undefined) return 'N/A'
     const sign = value >= 0 ? '+' : ''
@@ -32,7 +32,6 @@ export default function Home() {
     )
   }
 
-  // Format percentage point change (for sold % of list)
   const formatPercentagePoints = (value: number | null) => {
     if (value === null || value === undefined) return 'N/A'
     const sign = value >= 0 ? '+' : ''
@@ -44,7 +43,6 @@ export default function Home() {
     )
   }
 
-  // "N/A" if null - Should only happen when a data point is missing
   const formatNumber = (value: number | null) => {
     if (value === null) return 'N/A'
     return value.toLocaleString()
@@ -62,8 +60,10 @@ export default function Home() {
       </h1>
 
       {/* Sales Summary */}
-      {salesData && (
-        <div className="mb-4 space-y-2 sm:space-y-4">
+      <div className="mb-4 space-y-2 sm:space-y-4">
+        {!salesData ? (
+          <SummarySkeleton />
+        ) : (
           <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-3 sm:p-4">
             <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               The median sold price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
@@ -82,8 +82,8 @@ export default function Home() {
               this represents a month over month change of {formatPercentage(salesData.condoMoM)}.
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Sales Price Graph */}
       <div className="mb-4 sm:mb-8">
@@ -91,8 +91,10 @@ export default function Home() {
       </div>
 
       {/* Active Listings Summary */}
-      {listingsData && (
-        <div className="mb-4">
+      <div className="mb-4">
+        {!listingsData ? (
+          <SummarySkeleton />
+        ) : (
           <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
             <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
@@ -111,8 +113,8 @@ export default function Home() {
               this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Active Listings Graph */}
       <div className="mb-4 sm:mb-8">
@@ -120,8 +122,10 @@ export default function Home() {
       </div>
 
       {/* Sold Percent of List Summary */}
-      {soldPercentData && (
-        <div className="mb-4">
+      <div className="mb-4">
+        {!soldPercentData ? (
+          <SummarySkeleton />
+        ) : (
           <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
             <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
               <span className="font-semibold text-blue-600">Freehold homes</span> in Ottawa last week sold at{' '}
@@ -140,8 +144,8 @@ export default function Home() {
               this represents a month over month change of {formatPercentagePoints(soldPercentData.condoMoM)}.
             </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Sold Percent of List Graph */}
       <SoldPercentOfListGraph onDataLoad={setSoldPercentData} />

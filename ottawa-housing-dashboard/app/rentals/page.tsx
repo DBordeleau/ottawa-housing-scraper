@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import RentGraph, { RentGraphData } from '@/components/Rent-Graph'
 import RentalListingsGraph, { RentalListingsData } from '@/components/Rental-Listings-Graph'
+import { SummarySkeleton } from '@/components/Skeleton-Loader'
 
 export default function RentalsPage() {
     const [rentData, setRentData] = useState<RentGraphData | null>(null)
@@ -45,8 +46,10 @@ export default function RentalsPage() {
             </h1>
 
             {/* Rental Summary */}
-            {rentData && (
-                <div className="mb-4 space-y-2 sm:space-y-4">
+            <div className="mb-4 space-y-2 sm:space-y-4">
+                {!rentData ? (
+                    <SummarySkeleton />
+                ) : (
                     <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-3 sm:p-4">
                         <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
                             The median rental price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
@@ -65,8 +68,8 @@ export default function RentalsPage() {
                             this represents a month over month change of {formatPercentage(rentData.condoMoM)}.
                         </p>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Rental Price Graph */}
             <div className="mb-4 sm:mb-8">
@@ -74,8 +77,10 @@ export default function RentalsPage() {
             </div>
 
             {/* Rental Listings Summary */}
-            {listingsData && (
-                <div className="mb-4">
+            <div className="mb-4">
+                {!listingsData ? (
+                    <SummarySkeleton />
+                ) : (
                     <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-3 sm:p-4">
                         <p className="text-sm sm:text-lg text-center text-gray-700 leading-relaxed">
                             There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
@@ -94,8 +99,8 @@ export default function RentalsPage() {
                             this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
                         </p>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Rental Listings Graph */}
             <RentalListingsGraph onDataLoad={setListingsData} />
