@@ -56,96 +56,94 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-white via-green-50 to-green-100 top-3rem">
-      <div className="container mx-auto p-8 pt-[5rem]">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
-          Ottawa Housing Market Dashboard
-        </h1>
+    <div className="container mx-auto p-8">
+      <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">
+        Ottawa Housing Market Dashboard
+      </h1>
 
-        {salesData && (
-          <div className="mb-4 space-y-4">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                The median sold price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
-                <span className="font-bold text-gray-900">{formatCurrency(salesData.latestFreeholdPrice)}</span>,
-                this represents a month over month change of {formatPercentage(salesData.freeholdMoM)}
-                {salesData.freeholdYoY !== null && (
-                  <>
-                    , and a year over year change of {formatPercentage(salesData.freeholdYoY)}
-                  </>
-                )}.
-              </p>
+      {salesData && (
+        <div className="mb-4 space-y-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border border-gray-200 p-4">
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              The median sold price for <span className="font-semibold text-blue-600">freehold homes</span> in Ottawa last week was{' '}
+              <span className="font-bold text-gray-900">{formatCurrency(salesData.latestFreeholdPrice)}</span>,
+              this represents a month over month change of {formatPercentage(salesData.freeholdMoM)}
+              {salesData.freeholdYoY !== null && (
+                <>
+                  , and a year over year change of {formatPercentage(salesData.freeholdYoY)}
+                </>
+              )}.
+            </p>
 
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                The median sold price for <span className="font-semibold text-red-600">condos</span> in Ottawa last week was{' '}
-                <span className="font-bold text-gray-900">{formatCurrency(salesData.latestCondoPrice)}</span>,
-                this represents a month over month change of {formatPercentage(salesData.condoMoM)}.
-              </p>
-            </div>
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              The median sold price for <span className="font-semibold text-red-600">condos</span> in Ottawa last week was{' '}
+              <span className="font-bold text-gray-900">{formatCurrency(salesData.latestCondoPrice)}</span>,
+              this represents a month over month change of {formatPercentage(salesData.condoMoM)}.
+            </p>
           </div>
-        )}
-
-        {/* Sales Price Graph */}
-        <div className="mb-8">
-          <SalesGraph onDataLoad={setSalesData} />
         </div>
+      )}
 
-        {/* Active Listings Summary */}
-        {listingsData && (
-          <div className="mb-4">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
-                <span className="font-semibold text-blue-600">freehold homes</span> listed for sale in Ottawa last week,
-                this represents a month over month change of {formatPercentage(listingsData.freeholdMoM)}
-                {listingsData.freeholdYoY !== null && (
-                  <>
-                    , and a year over year change of {formatPercentage(listingsData.freeholdYoY)}
-                  </>
-                )}.
-              </p>
-
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestCondoListings)}</span>{' '}
-                <span className="font-semibold text-red-600">condos</span> listed for sale in Ottawa last week,
-                this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Active Listings Graph */}
-        <div className="mb-8">
-          <SalesListingsGraph onDataLoad={setListingsData} />
-        </div>
-
-        {/* Sold Percent of List Summary */}
-        {soldPercentData && (
-          <div className="mb-4">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                <span className="font-semibold text-blue-600">Freehold homes</span> in Ottawa last week sold at{' '}
-                <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestFreeholdPercent)}</span> of their list price,
-                this represents a month over month change of {formatPercentagePoints(soldPercentData.freeholdMoM)}
-                {soldPercentData.freeholdYoY !== null && (
-                  <>
-                    , and a year over year change of {formatPercentagePoints(soldPercentData.freeholdYoY)}
-                  </>
-                )}.
-              </p>
-
-              <p className="text-lg text-center text-gray-700 leading-relaxed">
-                <span className="font-semibold text-red-600">Condos</span> in Ottawa last week sold at{' '}
-                <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestCondoPercent)}</span> of their list price,
-                this represents a month over month change of {formatPercentagePoints(soldPercentData.condoMoM)}.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Sold Percent of List Graph */}
-        <SoldPercentOfListGraph onDataLoad={setSoldPercentData} />
+      {/* Sales Price Graph */}
+      <div className="mb-8">
+        <SalesGraph onDataLoad={setSalesData} />
       </div>
-    </main>
+
+      {/* Active Listings Summary */}
+      {listingsData && (
+        <div className="mb-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestFreeholdListings)}</span>{' '}
+              <span className="font-semibold text-blue-600">freehold homes</span> listed for sale in Ottawa last week,
+              this represents a month over month change of {formatPercentage(listingsData.freeholdMoM)}
+              {listingsData.freeholdYoY !== null && (
+                <>
+                  , and a year over year change of {formatPercentage(listingsData.freeholdYoY)}
+                </>
+              )}.
+            </p>
+
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              There were <span className="font-bold text-gray-900">{formatNumber(listingsData.latestCondoListings)}</span>{' '}
+              <span className="font-semibold text-red-600">condos</span> listed for sale in Ottawa last week,
+              this represents a month over month change of {formatPercentage(listingsData.condoMoM)}.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Active Listings Graph */}
+      <div className="mb-8">
+        <SalesListingsGraph onDataLoad={setListingsData} />
+      </div>
+
+      {/* Sold Percent of List Summary */}
+      {soldPercentData && (
+        <div className="mb-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md border w-full mx-auto border-gray-200 p-4">
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              <span className="font-semibold text-blue-600">Freehold homes</span> in Ottawa last week sold at{' '}
+              <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestFreeholdPercent)}</span> of their list price,
+              this represents a month over month change of {formatPercentagePoints(soldPercentData.freeholdMoM)}
+              {soldPercentData.freeholdYoY !== null && (
+                <>
+                  , and a year over year change of {formatPercentagePoints(soldPercentData.freeholdYoY)}
+                </>
+              )}.
+            </p>
+
+            <p className="text-lg text-center text-gray-700 leading-relaxed">
+              <span className="font-semibold text-red-600">Condos</span> in Ottawa last week sold at{' '}
+              <span className="font-bold text-gray-900">{formatPercent(soldPercentData.latestCondoPercent)}</span> of their list price,
+              this represents a month over month change of {formatPercentagePoints(soldPercentData.condoMoM)}.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Sold Percent of List Graph */}
+      <SoldPercentOfListGraph onDataLoad={setSoldPercentData} />
+    </div>
   )
 }
