@@ -54,13 +54,26 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
     const [chartData, setChartData] = useState<ChartDataPoint[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isMobile, setIsMobile] = useState(false)
 
+    // Check if mobile on mount and on resize
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Fetch data from supabase and calculate MoM changes (eventually YoY but rn not enough data)
     useEffect(() => {
         async function fetchData() {
             try {
                 setLoading(true)
 
-                // Fetch freehold rental data
                 const { data: freeholdData, error: freeholdError } = await supabase
                     .from('freehold_rentals')
                     .select('date, active_listings, rented_properties')
@@ -68,7 +81,6 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
 
                 if (freeholdError) throw freeholdError
 
-                // Fetch condo rental data
                 const { data: condoData, error: condoError } = await supabase
                     .from('condo_rentals')
                     .select('date, active_listings, rented_properties')
@@ -76,10 +88,8 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
 
                 if (condoError) throw condoError
 
-                // Merge the data by date
                 const dateMap = new Map<string, ChartDataPoint>()
 
-                // Add freehold data
                 freeholdData?.forEach((item: FreeholdRental) => {
                     dateMap.set(item.date, {
                         date: item.date,
@@ -92,7 +102,6 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                     })
                 })
 
-                // Add condo data
                 condoData?.forEach((item: CondoRental) => {
                     const existing = dateMap.get(item.date)
                     if (existing) {
@@ -121,7 +130,6 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                     const current = mergedData[i]
                     const currentDate = new Date(current.date)
 
-                    // Look for the data point closest to 1 month (30 days) prior
                     let closestPriorIndex = -1
                     let closestDiff = Infinity
 
@@ -129,7 +137,6 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         const priorDate = new Date(mergedData[j].date)
                         const actualDaysDiff = (currentDate.getTime() - priorDate.getTime()) / (1000 * 60 * 60 * 24)
 
-                        // We want something close to 30 days ago, but accept anything from 20-45 days
                         if (actualDaysDiff >= 20 && actualDaysDiff <= 45) {
                             const diffFrom30 = Math.abs(actualDaysDiff - 30)
 
@@ -144,12 +151,10 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                     if (closestPriorIndex >= 0) {
                         const previous = mergedData[closestPriorIndex]
 
-                        // Calculate freehold MoM
                         if (current.freeholdListings && previous.freeholdListings) {
                             current.freeholdListingsMoM = ((current.freeholdListings - previous.freeholdListings) / previous.freeholdListings) * 100
                         }
 
-                        // Calculate condo MoM
                         if (current.condoListings && previous.condoListings) {
                             current.condoListingsMoM = ((current.condoListings - previous.condoListings) / previous.condoListings) * 100
                         }
@@ -171,7 +176,6 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         const priorDate = new Date(mergedData[j].date)
                         const actualDaysDiff = (latestDate.getTime() - priorDate.getTime()) / (1000 * 60 * 60 * 24)
 
-                        // Look for data around 365 days ago (accept 330-395 days)
                         if (actualDaysDiff >= 330 && actualDaysDiff <= 395) {
                             const diffFrom365 = Math.abs(actualDaysDiff - 365)
 
@@ -240,46 +244,45 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
     // Custom legend component (Needed to show dashed lines for rented properties)
     const CustomLegend = () => {
         return (
-            <div className="flex justify-center items-center gap-6 pt-5 flex-wrap">
+            <div className={`flex justify-center items-center gap-3 sm:gap-6 pt-5 flex-wrap`}>
                 {/* Freehold Listings */}
                 <div className="flex items-center gap-2">
-                    <svg width="30" height="3">
-                        <line x1="0" y1="1.5" x2="30" y2="1.5" stroke="#3b82f6" strokeWidth="3" />
+                    <svg width={isMobile ? "20" : "30"} height="3">
+                        <line x1="0" y1="1.5" x2={isMobile ? "20" : "30"} y2="1.5" stroke="#3b82f6" strokeWidth="3" />
                     </svg>
-                    <span className="text-sm text-gray-700">Freehold Listings</span>
+                    <span className={isMobile ? "text-xs text-gray-700" : "text-sm text-gray-700"}>Freehold Listings</span>
                 </div>
 
                 {/* Condo Listings */}
                 <div className="flex items-center gap-2">
-                    <svg width="30" height="3">
-                        <line x1="0" y1="1.5" x2="30" y2="1.5" stroke="#ef4444" strokeWidth="3" />
+                    <svg width={isMobile ? "20" : "30"} height="3">
+                        <line x1="0" y1="1.5" x2={isMobile ? "20" : "30"} y2="1.5" stroke="#ef4444" strokeWidth="3" />
                     </svg>
-                    <span className="text-sm text-gray-700">Condo Listings</span>
+                    <span className={isMobile ? "text-xs text-gray-700" : "text-sm text-gray-700"}>Condo Listings</span>
                 </div>
 
                 {/* Freehold Rented */}
                 <div className="flex items-center gap-2">
-                    <svg width="30" height="3">
-                        <line x1="0" y1="1.5" x2="30" y2="1.5" stroke="#3b82f6" strokeWidth="2" strokeDasharray="5,5" />
+                    <svg width={isMobile ? "20" : "30"} height="3">
+                        <line x1="0" y1="1.5" x2={isMobile ? "20" : "30"} y2="1.5" stroke="#3b82f6" strokeWidth="2" strokeDasharray="5,5" />
                     </svg>
-                    <span className="text-sm text-gray-700">Freehold Rented</span>
+                    <span className={isMobile ? "text-xs text-gray-700" : "text-sm text-gray-700"}>Freehold Rented</span>
                 </div>
 
                 {/* Condo Rented */}
                 <div className="flex items-center gap-2">
-                    <svg width="30" height="3">
-                        <line x1="0" y1="1.5" x2="30" y2="1.5" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5" />
+                    <svg width={isMobile ? "20" : "30"} height="3">
+                        <line x1="0" y1="1.5" x2={isMobile ? "20" : "30"} y2="1.5" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5" />
                     </svg>
-                    <span className="text-sm text-gray-700">Condo Rented</span>
+                    <span className={isMobile ? "text-xs text-gray-700" : "text-sm text-gray-700"}>Condo Rented</span>
                 </div>
             </div>
         )
     }
 
-    // Custom tooltip component
+    // Custom tooltip component to show changes for each data point
     const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         if (active && payload && payload.length) {
-            // Find freehold and condo data
             const freeholdListingsData = payload.find(p => p.dataKey === 'freeholdListings')
             const condoListingsData = payload.find(p => p.dataKey === 'condoListings')
             const freeholdRentedData = payload.find(p => p.dataKey === 'freeholdRented')
@@ -350,14 +353,19 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
     }
 
     return (
-        <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-3 sm:p-6">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">
                 Ottawa Rental Market - Active Listings & Rented Properties
             </h2>
-            <ResponsiveContainer width="100%" height={450}>
+            <ResponsiveContainer width="100%" height={isMobile ? 350 : 450}>
                 <LineChart
                     data={chartData}
-                    margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+                    margin={{
+                        top: 5,
+                        right: isMobile ? 10 : 30,
+                        left: isMobile ? 20 : 70,
+                        bottom: 5
+                    }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
@@ -367,32 +375,37 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         textAnchor="end"
                         height={80}
                         stroke="#6b7280"
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
                     />
                     <YAxis
                         stroke="#6b7280"
-                        width={60}
+                        width={isMobile ? 45 : 60}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
                         domain={['dataMin - 10', 'dataMax + 10']}
                     />
-                    <text
-                        x={20}
-                        y={200}
-                        fill="#6b7280"
-                        fontSize={14}
-                        fontWeight={600}
-                        transform="rotate(-90, 20, 200)"
-                        textAnchor="middle"
-                    >
-                        Number of Properties
-                    </text>
+                    {!isMobile && (
+                        <text
+                            x={20}
+                            y={200}
+                            fill="#6b7280"
+                            fontSize={14}
+                            fontWeight={600}
+                            transform="rotate(-90, 20, 200)"
+                            textAnchor="middle"
+                        >
+                            Number of Properties
+                        </text>
+                    )}
                     <Tooltip content={<CustomTooltip />} />
                     {/* Solid lines for active listings */}
                     <Line
                         type="monotone"
                         dataKey="freeholdListings"
                         stroke="#3b82f6"
-                        strokeWidth={3}
-                        dot={{ fill: '#3b82f6', r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={isMobile ? 2 : 3}
+                        dot={isMobile ? false : { fill: '#3b82f6', r: 4 }}
+                        activeDot={{ r: isMobile ? 4 : 6 }}
                         connectNulls
                         legendType="none"
                     />
@@ -400,9 +413,9 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         type="monotone"
                         dataKey="condoListings"
                         stroke="#ef4444"
-                        strokeWidth={3}
-                        dot={{ fill: '#ef4444', r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={isMobile ? 2 : 3}
+                        dot={isMobile ? false : { fill: '#ef4444', r: 4 }}
+                        activeDot={{ r: isMobile ? 4 : 6 }}
                         connectNulls
                         legendType="none"
                     />
@@ -411,10 +424,10 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         type="monotone"
                         dataKey="freeholdRented"
                         stroke="#3b82f6"
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         strokeDasharray="5 5"
-                        dot={{ fill: '#3b82f6', r: 3 }}
-                        activeDot={{ r: 5 }}
+                        dot={isMobile ? false : { fill: '#3b82f6', r: 3 }}
+                        activeDot={{ r: isMobile ? 3 : 5 }}
                         connectNulls
                         legendType="none"
                     />
@@ -422,10 +435,10 @@ export default function RentalListingsGraph({ onDataLoad }: RentalListingsGraphP
                         type="monotone"
                         dataKey="condoRented"
                         stroke="#ef4444"
-                        strokeWidth={2}
+                        strokeWidth={isMobile ? 1.5 : 2}
                         strokeDasharray="5 5"
-                        dot={{ fill: '#ef4444', r: 3 }}
-                        activeDot={{ r: 5 }}
+                        dot={isMobile ? false : { fill: '#ef4444', r: 3 }}
+                        activeDot={{ r: isMobile ? 3 : 5 }}
                         connectNulls
                         legendType="none"
                     />

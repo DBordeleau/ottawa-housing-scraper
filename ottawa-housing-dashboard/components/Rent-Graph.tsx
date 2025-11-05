@@ -50,13 +50,26 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
     const [chartData, setChartData] = useState<ChartDataPoint[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isMobile, setIsMobile] = useState(false)
 
+    // Check for mobile screen size on mount and on resize
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Fetch data from supabase and calculate MoM and YoY changes
     useEffect(() => {
         async function fetchData() {
             try {
                 setLoading(true)
 
-                // Fetch freehold rental data
                 const { data: freeholdData, error: freeholdError } = await supabase
                     .from('freehold_rentals')
                     .select('date, median_rented_price')
@@ -64,7 +77,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
 
                 if (freeholdError) throw freeholdError
 
-                // Fetch condo rental data
                 const { data: condoData, error: condoError } = await supabase
                     .from('condo_rentals')
                     .select('date, median_rented_price')
@@ -75,7 +87,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                 // Merge the data by date
                 const dateMap = new Map<string, ChartDataPoint>()
 
-                // Add freehold data
                 freeholdData?.forEach((item: FreeholdRental) => {
                     dateMap.set(item.date, {
                         date: item.date,
@@ -86,7 +97,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                     })
                 })
 
-                // Add condo data
                 condoData?.forEach((item: CondoRental) => {
                     const existing = dateMap.get(item.date)
                     if (existing) {
@@ -112,7 +122,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                     const current = mergedData[i]
                     const currentDate = new Date(current.date)
 
-                    // Look for the data point closest to 1 month (30 days) prior
                     let closestPriorIndex = -1
                     let closestDiff = Infinity
 
@@ -120,7 +129,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                         const priorDate = new Date(mergedData[j].date)
                         const actualDaysDiff = (currentDate.getTime() - priorDate.getTime()) / (1000 * 60 * 60 * 24)
 
-                        // We want something close to 30 days ago, but accept anything from 20-45 days
                         if (actualDaysDiff >= 20 && actualDaysDiff <= 45) {
                             const diffFrom30 = Math.abs(actualDaysDiff - 30)
 
@@ -135,12 +143,10 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                     if (closestPriorIndex >= 0) {
                         const previous = mergedData[closestPriorIndex]
 
-                        // Calculate freehold MoM
                         if (current.freehold && previous.freehold) {
                             current.freeholdMoM = ((current.freehold - previous.freehold) / previous.freehold) * 100
                         }
 
-                        // Calculate condo MoM
                         if (current.condo && previous.condo) {
                             current.condoMoM = ((current.condo - previous.condo) / previous.condo) * 100
                         }
@@ -162,7 +168,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                         const priorDate = new Date(mergedData[j].date)
                         const actualDaysDiff = (latestDate.getTime() - priorDate.getTime()) / (1000 * 60 * 60 * 24)
 
-                        // Look for data around 365 days ago (accept 330-395 days)
                         if (actualDaysDiff >= 330 && actualDaysDiff <= 395) {
                             const diffFrom365 = Math.abs(actualDaysDiff - 365)
 
@@ -241,7 +246,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
     // Custom tooltip component
     const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         if (active && payload && payload.length) {
-            // Find freehold and condo data
             const freeholdData = payload.find(p => p.dataKey === 'freehold')
             const condoData = payload.find(p => p.dataKey === 'condo')
 
@@ -249,7 +253,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                 <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3">
                     <p className="font-semibold text-gray-800 mb-2">{formatDate(label || '')}</p>
 
-                    {/* Freehold always comes first */}
                     {freeholdData && freeholdData.value && (
                         <p className="text-blue-600 font-medium">
                             Freehold: {formatCurrency(freeholdData.value)}
@@ -257,7 +260,6 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                         </p>
                     )}
 
-                    {/* Condo comes second */}
                     {condoData && condoData.value && (
                         <p className="text-red-600 font-medium">
                             Condo: {formatCurrency(condoData.value)}
@@ -296,14 +298,19 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
     }
 
     return (
-        <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 p-3 sm:p-6">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">
                 Ottawa Housing Market - Median Rental Prices
             </h2>
-            <ResponsiveContainer width="100%" height={450}>
+            <ResponsiveContainer width="100%" height={isMobile ? 350 : 450}>
                 <LineChart
                     data={chartData}
-                    margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+                    margin={{
+                        top: 5,
+                        right: isMobile ? 10 : 30,
+                        left: isMobile ? 20 : 70,
+                        bottom: 5
+                    }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
@@ -313,47 +320,54 @@ export default function RentGraph({ onDataLoad }: RentGraphProps) {
                         textAnchor="end"
                         height={80}
                         stroke="#6b7280"
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
+                        interval={isMobile ? 'preserveStartEnd' : 'preserveEnd'}
                     />
                     <YAxis
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(isMobile ? 0 : 1)}k`}
                         stroke="#6b7280"
-                        width={60}
+                        width={isMobile ? 45 : 60}
+                        tick={{ fontSize: isMobile ? 10 : 12 }}
                         domain={['dataMin - 200', 'dataMax + 200']}
                     />
-                    <text
-                        x={20}
-                        y={200}
-                        fill="#6b7280"
-                        fontSize={14}
-                        fontWeight={600}
-                        transform="rotate(-90, 20, 200)"
-                        textAnchor="middle"
-                    >
-                        Median Rental Price
-                    </text>
+                    {!isMobile && (
+                        <text
+                            x={20}
+                            y={200}
+                            fill="#6b7280"
+                            fontSize={14}
+                            fontWeight={600}
+                            transform="rotate(-90, 20, 200)"
+                            textAnchor="middle"
+                        >
+                            Median Rental Price
+                        </text>
+                    )}
                     <Tooltip content={<CustomTooltip />} />
                     <Legend
                         wrapperStyle={{ paddingTop: '20px' }}
                         iconType="line"
+                        iconSize={isMobile ? 8 : 10}
+                        formatter={(value) => <span className={isMobile ? 'text-xs' : 'text-sm'}>{value}</span>}
                     />
                     <Line
                         type="monotone"
                         dataKey="freehold"
                         stroke="#3b82f6"
-                        strokeWidth={3}
+                        strokeWidth={isMobile ? 2 : 3}
                         name="Freehold"
-                        dot={{ fill: '#3b82f6', r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={isMobile ? false : { fill: '#3b82f6', r: 4 }}
+                        activeDot={{ r: isMobile ? 4 : 6 }}
                         connectNulls
                     />
                     <Line
                         type="monotone"
                         dataKey="condo"
                         stroke="#ef4444"
-                        strokeWidth={3}
+                        strokeWidth={isMobile ? 2 : 3}
                         name="Condo"
-                        dot={{ fill: '#ef4444', r: 4 }}
-                        activeDot={{ r: 6 }}
+                        dot={isMobile ? false : { fill: '#ef4444', r: 4 }}
+                        activeDot={{ r: isMobile ? 4 : 6 }}
                         connectNulls
                     />
                 </LineChart>
