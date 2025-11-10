@@ -230,19 +230,19 @@ def parse_real_estate_data(selftext):
         data['freehold_rentals'] = {
             'active_listings': extract_number(section_text, r'Number of active listings:\s*(\d+)'),
             'rented_properties': extract_number(section_text, r'Number of rented properties:\s*(\d+)'),
-            'median_list_price': extract_number(section_text, r'Median (?:list(?:ed)?) price:\s*\$?([\d,]+)'),
+            'median_list_price': extract_number(section_text, r'Median list(?:ed)? price:\s*\$?([\d,]+)'),
             'median_rented_price': extract_number(section_text, r'Median rented price:\s*\$?([\d,]+)'),
             'median_dom': extract_number(section_text, r'Median DOM:\s*(\d+)')
         }
     
     # Condo Rentals
-    condo_rental_section = re.search(r'\*\*\*Condo Rentals\*\*\*(.*?)$', selftext, re.DOTALL)
+    condo_rental_section = re.search(r'\*\*\*Condo Rentals\*\*\*(.*?)(?:\*\*\*|$)', selftext, re.DOTALL)
     if condo_rental_section:
         section_text = condo_rental_section.group(1)
         data['condo_rentals'] = {
             'active_listings': extract_number(section_text, r'Number of active listings:\s*(\d+)'),
             'rented_properties': extract_number(section_text, r'Number of rented properties:\s*(\d+)'),
-            'median_list_price': extract_number(section_text, r'Median list price:\s*\$?([\d,]+)'),
+            'median_list_price': extract_number(section_text, r'Median list(?:ed)? price:\s*\$?([\d,]+)'),
             'median_rented_price': extract_number(section_text, r'Median rented price:\s*\$?([\d,]+)'),
             'median_dom': extract_number(section_text, r'Median DOM:\s*(\d+)')
         }
