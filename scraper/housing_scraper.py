@@ -87,7 +87,7 @@ def get_realistic_headers():
     return headers
 
 # Fetch reddit posts with retries and Webshare rotating proxy
-def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
+def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100, use_proxy=True):
     url = f"https://old.reddit.com/user/{username}/submitted.json"
     
     all_posts = []
@@ -104,12 +104,16 @@ def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
         
         for attempt in range(max_retries):
             try:
-                proxy = proxy_rotator.get_proxy()
+                # Get proxy if enabled
+                proxy = proxy_rotator.get_proxy() if use_proxy else None
                 
                 # Get realistic headers with rotated User-Agent
                 headers = get_realistic_headers()
                 
-                print(f"Attempt {attempt + 1}/{max_retries} using Webshare rotating proxy...")
+                if use_proxy:
+                    print(f"Attempt {attempt + 1}/{max_retries} using Webshare rotating proxy...")
+                else:
+                    print(f"Attempt {attempt + 1}/{max_retries} without proxy (direct connection)...")
 
                 # Add random delay before each request to avoid rate limiting/detection
                 if attempt > 0 or len(all_posts) > 0:
@@ -274,50 +278,54 @@ def main():
     proxy_username = os.environ.get("WEBSHARE_PROXY_USERNAME")
     proxy_password = os.environ.get("WEBSHARE_PROXY_PASSWORD")
     
-    # Validate we have proxy credentials
-    if not all([proxy_host, proxy_port, proxy_username, proxy_password]):
-        print("\n" + "=" * 60)
-        print("ERROR: MISSING WEBSHARE PROXY CREDENTIALS")
-        print("=" * 60)
-        print("\nRequired .env variables:")
-        print("  - WEBSHARE_PROXY_HOST")
-        print("  - WEBSHARE_PROXY_PORT")
-        print("  - WEBSHARE_PROXY_USERNAME")
-        print("  - WEBSHARE_PROXY_PASSWORD")
-        print("\nScript will NOT run without proxy credentials. Quitting now.")
-        print("=" * 60)
-        return
+    proxy_rotator = None
+    use_proxy = False
     
-    # Initialize proxy rotator (Webshare handles rotation automatically)
-    print(f"\nInitializing Webshare rotating proxy...")
-    try:
-        proxy_rotator = ProxyRotator(
-            host=proxy_host,
-            port=proxy_port,
-            username=proxy_username,
-            password=proxy_password
-        )
-    except ValueError as e:
-        print(f"\nERROR: {e}")
-        return
-    
-    # Test the proxy connection
-    print("\nTesting proxy connection...")
-    if not proxy_rotator.test_proxy():
-        print("\n" + "=" * 60)
-        print("ERROR: PROXY TEST FAILED")
-        print("=" * 60)
-        print("\nUnable to connect through Webshare proxy.")
-        print("Please verify your credentials and try again.")
-        print("=" * 60)
-        return
+    # Try to set up proxy if credentials are provided
+    if all([proxy_host, proxy_port, proxy_username, proxy_password]):
+        print(f"\nInitializing Webshare rotating proxy...")
+        try:
+            proxy_rotator = ProxyRotator(
+                host=proxy_host,
+                port=proxy_port,
+                username=proxy_username,
+                password=proxy_password
+            )
+            
+            # Test the proxy connection
+            print("\nTesting proxy connection...")
+            if proxy_rotator.test_proxy():
+                print("✓ Proxy is working!")
+                use_proxy = True
+            else:
+                print("⚠ Proxy test failed, will try direct connection instead")
+                use_proxy = False
+        except Exception as e:
+            print(f"⚠ Could not initialize proxy: {e}")
+            print("Will try direct connection instead")
+            use_proxy = False
+    else:
+        print("\n⚠ No proxy credentials found in environment")
+        print("Will attempt direct connection to Reddit")
     
     print("\n" + "=" * 60)
-    print("Starting scraper with Webshare rotating proxy enabled")
+    if use_proxy:
+        print("Starting scraper with Webshare rotating proxy enabled")
+    else:
+        print("Starting scraper with direct connection (no proxy)")
     print("=" * 60 + "\n")
     
-    # Only fetch posts now that we have valid proxies
-    reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator)
+    # Fetch posts (with or without proxy)
+    try:
+        reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator, use_proxy=use_proxy)
+    except Exception as e:
+        if use_proxy:
+            print(f"\n⚠ Proxy failed with error: {e}")
+            print("Retrying without proxy...")
+            reddit_data = fetch_reddit_posts("ottawaagent", None, use_proxy=False)
+        else:
+            raise
+    
     posts = reddit_data['data']['children']
     
     # Only process posts after the cutoff date
