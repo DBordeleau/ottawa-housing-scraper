@@ -219,7 +219,7 @@ def parse_real_estate_data(selftext):
             'conditional_sales': extract_number(section_text, r'Number of conditional sales:\s*(\d+)'),
             'sold_properties': extract_number(section_text, r'Number of sold properties:\s*(\d+)'),
             'median_list_price': extract_number(section_text, r'Median list price:\s*\$?([\d,]+)'),
-            'sold_price': extract_number(section_text, r'Sold price:\s*\$?([\d,]+)'),
+            'median_sold_price': extract_number(section_text, r'(?:Median )?[Ss]old price:\s*\$?([\d,]+)'),
             'median_dom': extract_number(section_text, r'Median DOM:\s*(\d+)')
         }
     
