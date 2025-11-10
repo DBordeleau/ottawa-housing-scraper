@@ -315,14 +315,23 @@ def main():
         print("Starting scraper with direct connection (no proxy)")
     print("=" * 60 + "\n")
     
+    # Determine fetch limit based on MAX_POSTS setting
+    max_posts_str = os.environ.get("MAX_POSTS")
+    if max_posts_str and max_posts_str.isdigit():
+        fetch_limit = int(max_posts_str)
+        print(f"MAX_POSTS set to {fetch_limit} - will only fetch first {fetch_limit} posts")
+    else:
+        fetch_limit = 100  # Default pagination size
+        print(f"No MAX_POSTS limit - will fetch all posts")
+    
     # Fetch posts (with or without proxy)
     try:
-        reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator, use_proxy=use_proxy)
+        reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator, use_proxy=use_proxy, limit=fetch_limit)
     except Exception as e:
         if use_proxy:
             print(f"\n⚠ Proxy failed with error: {e}")
             print("Retrying without proxy...")
-            reddit_data = fetch_reddit_posts("ottawaagent", None, use_proxy=False)
+            reddit_data = fetch_reddit_posts("ottawaagent", None, use_proxy=False, limit=fetch_limit)
         else:
             raise
     
@@ -340,15 +349,8 @@ def main():
         and (CUTOFF_DATE is None or datetime.fromtimestamp(post['data']['created_utc']) >= CUTOFF_DATE)
     ]
     
-    # Sort by date (newest first) and limit (if set)
+    # Sort by date (newest first)
     target_posts.sort(key=lambda x: x['created_utc'], reverse=True)
-    max_posts_str = os.environ.get("MAX_POSTS")
-    if max_posts_str and max_posts_str.isdigit():
-        max_posts = int(max_posts_str)
-        print(f"Limiting to {max_posts} posts (MAX_POSTS is set in .env)")
-        target_posts = target_posts[:max_posts]
-    else:
-        print(f"Processing all {len(target_posts)} posts (no MAX_POSTS limit)")
     
     print(f"Found {len(target_posts)} matching posts to process\n")
     
