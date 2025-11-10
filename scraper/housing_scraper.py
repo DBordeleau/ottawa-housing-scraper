@@ -87,7 +87,7 @@ def get_realistic_headers():
     return headers
 
 # Fetch reddit posts with retries and Webshare rotating proxy
-def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100, use_proxy=True):
+def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100, use_proxy=True, max_posts=None):
     url = f"https://old.reddit.com/user/{username}/submitted.json"
     
     all_posts = []
@@ -148,6 +148,12 @@ def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100, use_pr
                 all_posts.extend(posts)
                 
                 print(f"Fetched {len(posts)} posts (total so far: {len(all_posts)})")
+                
+                # Stop if we've reached max_posts limit
+                if max_posts and len(all_posts) >= max_posts:
+                    print(f"\nReached max_posts limit ({max_posts}). Stopping pagination.")
+                    print(f"Total posts fetched: {len(all_posts)}\n")
+                    return {'data': {'children': all_posts[:max_posts]}}
                 
                 # Check if there are more posts (pagination)
                 after = data['data'].get('after')
@@ -318,20 +324,22 @@ def main():
     # Determine fetch limit based on MAX_POSTS setting
     max_posts_str = os.environ.get("MAX_POSTS")
     if max_posts_str and max_posts_str.isdigit():
-        fetch_limit = int(max_posts_str)
-        print(f"MAX_POSTS set to {fetch_limit} - will only fetch first {fetch_limit} posts")
+        max_posts = int(max_posts_str)
+        print(f"MAX_POSTS set to {max_posts} - will stop after fetching {max_posts} posts")
+        fetch_limit = min(max_posts, 25)  # Use smaller page size for efficiency
     else:
+        max_posts = None
         fetch_limit = 100  # Default pagination size
         print(f"No MAX_POSTS limit - will fetch all posts")
     
     # Fetch posts (with or without proxy)
     try:
-        reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator, use_proxy=use_proxy, limit=fetch_limit)
+        reddit_data = fetch_reddit_posts("ottawaagent", proxy_rotator, use_proxy=use_proxy, limit=fetch_limit, max_posts=max_posts)
     except Exception as e:
         if use_proxy:
             print(f"\n⚠ Proxy failed with error: {e}")
             print("Retrying without proxy...")
-            reddit_data = fetch_reddit_posts("ottawaagent", None, use_proxy=False, limit=fetch_limit)
+            reddit_data = fetch_reddit_posts("ottawaagent", None, use_proxy=False, limit=fetch_limit, max_posts=max_posts)
         else:
             raise
     
