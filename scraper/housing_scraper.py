@@ -11,7 +11,7 @@ import random
 from datetime import datetime
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from proxy_rotator import ProxyRotator, fetch_free_proxy_list
+from proxy_rotator import ProxyRotator
 
 load_dotenv()
 
@@ -86,7 +86,7 @@ def get_realistic_headers():
     
     return headers
 
-# Fetch reddit posts with retries, user agent and proxy rotation
+# Fetch reddit posts with retries and Webshare rotating proxy
 def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
     url = f"https://old.reddit.com/user/{username}/submitted.json"
     
@@ -104,12 +104,12 @@ def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
         
         for attempt in range(max_retries):
             try:
-                proxy = proxy_rotator.get_next_proxy()
+                proxy = proxy_rotator.get_proxy()
                 
                 # Get realistic headers with rotated User-Agent
                 headers = get_realistic_headers()
                 
-                print(f"Attempt {attempt + 1}/{max_retries} using proxy: {proxy['http'][:50]}...")
+                print(f"Attempt {attempt + 1}/{max_retries} using Webshare rotating proxy...")
 
                 # Add random delay before each request to avoid rate limiting/detection
                 if attempt > 0 or len(all_posts) > 0:
@@ -130,13 +130,11 @@ def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
                     wait_time = int(retry_after) if retry_after.isdigit() else 60
                     print(f"Rate limited. Waiting {wait_time}s before retry...")
                     time.sleep(wait_time)
-                    proxy_rotator.mark_proxy_failed(proxy)
                     continue
                 
-                # If access is forbidden mark the proxy as failed
+                # If access is forbidden, log but continue (Webshare will rotate to new IP)
                 if response.status_code == 403:
-                    print("Access forbidden - proxy may be blocked")
-                    proxy_rotator.mark_proxy_failed(proxy)
+                    print("Access forbidden - trying again (Webshare will use different IP)")
                     continue
                 
                 response.raise_for_status()
@@ -158,16 +156,13 @@ def fetch_reddit_posts(username, proxy_rotator, max_retries=3, limit=100):
                 # Successfully fetched this batch, break retry loop and continue to next batch
                 break
                 
-            # Mark proxy as failed on proxy errors or timeouts
+            # Log errors but don't mark proxy as failed (Webshare handles rotation)
             except requests.exceptions.ProxyError as e:
                 print(f"   Proxy error: {e}")
-                proxy_rotator.mark_proxy_failed(proxy)
             except requests.exceptions.Timeout as e:
                 print(f"   Timeout error: {e}")
-                proxy_rotator.mark_proxy_failed(proxy)
             except requests.exceptions.RequestException as e:
                 print(f"   Request error: {e}")
-                proxy_rotator.mark_proxy_failed(proxy)
             
             # Wait before retry with exponential backoff
             if attempt < max_retries - 1:
@@ -273,52 +268,52 @@ def main():
     if is_github_actions:
         print("\nRunning in GitHub Actions")
 
-    # Use webshare proxies from .env
-    proxy_list_str = os.environ.get("PROXY_LIST", "")
-    proxy_list = []
+    # Get Webshare rotating proxy credentials from .env
+    proxy_host = os.environ.get("WEBSHARE_PROXY_HOST")
+    proxy_port = os.environ.get("WEBSHARE_PROXY_PORT")
+    proxy_username = os.environ.get("WEBSHARE_PROXY_USERNAME")
+    proxy_password = os.environ.get("WEBSHARE_PROXY_PASSWORD")
     
-    if proxy_list_str:
-        print("\nFound PROXY_LIST in .env file")
-        proxy_list = [p.strip() for p in proxy_list_str.split(',') if p.strip()]
-        print(f"Loaded {len(proxy_list)} proxies from PROXY_LIST")
-    else:
-        # Fallback to free proxies (this literally will never work)
-        print("\nNo PROXY_LIST found in .env file")
-        print("Attempting to fetch free proxies (Probably not going to work)")
-        proxy_list = fetch_free_proxy_list()
-        
-        if proxy_list:
-            print(f"Fetched {len(proxy_list)} free proxies (success not guaranteed)")
-        else:
-            print("Failed to fetch free proxies")
-
-    # Validate we have proxies
-    if not proxy_list:
+    # Validate we have proxy credentials
+    if not all([proxy_host, proxy_port, proxy_username, proxy_password]):
         print("\n" + "=" * 60)
-        print("ERROR: NO PROXIES AVAILABLE")
+        print("ERROR: MISSING WEBSHARE PROXY CREDENTIALS")
         print("=" * 60)
-        print("\nScript will NOT run without valid proxies. Quitting now.")
+        print("\nRequired .env variables:")
+        print("  - WEBSHARE_PROXY_HOST")
+        print("  - WEBSHARE_PROXY_PORT")
+        print("  - WEBSHARE_PROXY_USERNAME")
+        print("  - WEBSHARE_PROXY_PASSWORD")
+        print("\nScript will NOT run without proxy credentials. Quitting now.")
         print("=" * 60)
         return
     
-    # Initialize proxy rotator with validation
-    print(f"\nValidating {len(proxy_list)} proxies (this may take 30-60 seconds)...")
-    print("Testing each proxy against httpbin.org...")
-    proxy_rotator = ProxyRotator(proxy_list, validate=True)
+    # Initialize proxy rotator (Webshare handles rotation automatically)
+    print(f"\nInitializing Webshare rotating proxy...")
+    try:
+        proxy_rotator = ProxyRotator(
+            host=proxy_host,
+            port=proxy_port,
+            username=proxy_username,
+            password=proxy_password
+        )
+    except ValueError as e:
+        print(f"\nERROR: {e}")
+        return
     
-    # Check if we have any valid proxies after validation
-    if not proxy_rotator.proxy_list or len(proxy_rotator.proxy_list) == 0:
+    # Test the proxy connection
+    print("\nTesting proxy connection...")
+    if not proxy_rotator.test_proxy():
         print("\n" + "=" * 60)
-        print("ERROR: NO VALID PROXIES AFTER VALIDATION")
+        print("ERROR: PROXY TEST FAILED")
         print("=" * 60)
-        print("\nAll provided proxies failed validation.")
-        print("\nScript will NOT run without valid proxies. Quitting now.")
+        print("\nUnable to connect through Webshare proxy.")
+        print("Please verify your credentials and try again.")
         print("=" * 60)
         return
     
-    print(f"Successfully validated {len(proxy_rotator.proxy_list)} working proxies")
     print("\n" + "=" * 60)
-    print("Starting scraper with proxy protection enabled")
+    print("Starting scraper with Webshare rotating proxy enabled")
     print("=" * 60 + "\n")
     
     # Only fetch posts now that we have valid proxies
