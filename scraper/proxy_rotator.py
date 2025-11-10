@@ -16,7 +16,7 @@ class ProxyRotator:
         if not all([host, port, username, password]):
             raise ValueError("All proxy credentials must be provided: host, port, username, password")
         
-        self.proxy_url = f"http://{username}:{password}@{host}:{port}"
+        self.proxy_url = f"http://{username}:{password}@{host}:{port}/"
         print(f"Initialized Webshare rotating proxy: {host}:{port}")
         print(f"Username: {username}")
         print("Webshare will automatically rotate IPs on each request")
@@ -33,15 +33,15 @@ class ProxyRotator:
     def test_proxy(self, timeout=15):
         try:
             proxy_dict = self.get_proxy()
+            # Use Webshare's test endpoint as per their documentation
             response = requests.get(
-                'http://httpbin.org/ip',
+                'https://ipv4.webshare.io/',
                 proxies=proxy_dict,
                 timeout=timeout
             )
             
             if response.status_code == 200:
-                ip_data = response.json()
-                print(f"✓ Proxy test successful! Current IP: {ip_data.get('origin', 'unknown')}")
+                print(f"✓ Proxy test successful! Response length: {len(response.text)} bytes")
                 return True
             else:
                 print(f"✗ Proxy test failed with status code: {response.status_code}")
