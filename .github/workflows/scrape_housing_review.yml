@@ -1,9 +1,9 @@
 name: Scrape Ottawa Housing Data
 
 on:
-  # Run every Monday at 5pm Eastern (should be well after the post goes up)
+  # Run every Monday at 6pm Eastern (should be well after the post goes up)
   schedule:
-    - cron: '0 21 * * 1'
+    - cron: '0 23 * * 1'
   
   # Allow manual trigger
   workflow_dispatch:
